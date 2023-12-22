@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+require "rubygems"
+require "bundler/setup"
+$test = true
+Dir.glob("./lib/**/*.rb").each do |source_file|
+  require_relative File.join("../", source_file)
+end

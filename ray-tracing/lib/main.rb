@@ -1,30 +1,16 @@
 require "chunky_png"
 require_relative "vec3"
 require_relative "ray"
+require_relative "hittable_list"
+require_relative "sphere"
 
 class Main
   using NumericVec3
 
-  def self.hit_sphere(center, radius, ray)
-    oc = ray.origin - center
-    a = Vec3.dot(ray.direction, ray.direction)
-    b = 2.0 * Vec3.dot(oc, ray.direction)
-    c = Vec3.dot(oc, oc) - radius * radius
-
-    discriminant = b * b - 4 * a * c
-
-    if discriminant < 0 
-      -1.0
-    else
-      (-b - Math.sqrt(discriminant)) / (2.0 * a)
-    end
-  end
-
-  def self.ray_color(ray)
-    t = hit_sphere(Point3.new(0, 0, -1), 0.5, ray)
-    if t > 0.0
-      n = Vec3.unit_vector(ray.at(t) - Vec3.new(0, 0, -1))
-      return 0.5 * Color.new(n.x + 1, n.y + 1, n.z + 1)
+  def self.ray_color(ray, world)
+    hit_anything, temp_rec = world.hit(ray, 0, Float::INFINITY)
+    if hit_anything
+      return 0.5 * (temp_rec.normal + Color.new(1, 1, 1))
     end
 
     unit_direction = Vec3.unit_vector(ray.direction)
@@ -36,6 +22,11 @@ class Main
     aspect_ratio = 16.0 / 9.0
     image_width = 400
     image_height = [image_width.fdiv(aspect_ratio), 1].max.to_i
+
+    # world
+    world = HittableList.new
+    world.add(Sphere.new(Point3.new(0, 0, -1), 0.5))
+    world.add(Sphere.new(Point3.new(0, -100.5, -1), 100))
 
     # camera
     focal_length = 1.0
@@ -66,7 +57,7 @@ class Main
         ray_direction = pixel_center - camera_center
 
         ray = Ray.new(camera_center, ray_direction)
-        pixel_color = ray_color(ray).color
+        pixel_color = ray_color(ray, world).color
 
         png[i, j] = pixel_color
       end
